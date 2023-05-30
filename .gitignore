@@ -1,160 +1,147 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import pygame
+import random
 
-# C extensions
-*.so
+# Thiết lập các biến cấu hình
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 400
+GRAVITY = 0.5
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+class Dinosaur(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image_stand = pygame.Surface((40, 60))  # Hình ảnh khi đứng
+        self.image_stand.fill((0, 128, 0))  # Màu xanh lá cây
+        self.image_duck = pygame.Surface((40, 40))  # Hình ảnh khi cúi
+        self.image_duck.fill((0, 128, 0))  # Màu xanh lá cây
+        self.image = self.image_stand  # Hình ảnh mặc định là đứng
+        self.rect = self.image.get_rect()
+        self.rect.x = 50
+        self.rect.y = SCREEN_HEIGHT - self.rect.height
+        self.velocity = 0
+        self.ducking = False
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+    def update(self):
+        self.velocity += GRAVITY
+        self.rect.y += self.velocity
+        if self.rect.y >= SCREEN_HEIGHT - self.rect.height:
+            self.rect.y = SCREEN_HEIGHT - self.rect.height
+            self.velocity = 0
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+    def jump(self):
+        if self.rect.y == SCREEN_HEIGHT - self.rect.height:
+            self.velocity -= 10
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+    def duck(self):
+        self.ducking = True
+        self.image = self.image_duck
+        self.rect.height = self.image.get_height()
 
-# Translations
-*.mo
-*.pot
+    def stand_up(self):
+        self.ducking = False
+        self.image = self.image_stand
+        self.rect.height = self.image.get_height()
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+class Cactus(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((20, 40))  # Tạo hình ảnh cho cây xương rồng
+        self.image.fill((139, 69, 19))  # Màu nâu đậm
+        self.rect = self.image.get_rect()
+        self.rect.x = SCREEN_WIDTH
+        self.rect.y = SCREEN_HEIGHT - self.rect.height
 
-# Flask stuff:
-instance/
-.webassets-cache
+    def update(self):
+        self.rect.x -= 5
+        if self.rect.x < -self.rect.width:
+            self.kill()
 
-# Scrapy stuff:
-.scrapy
+class Bird(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pygame.Surface((25, 30))  # Tạo hình ảnh cho con chim
+        self.image.fill((255, 0, 0))  # Màu đỏ
+        self.rect = self.image.get_rect()
+        self.rect.x = SCREEN_WIDTH
+        self.rect.y = random.randint(250, 350)  # Vị trí ngẫu nhiên theo chiều y
 
-# Sphinx documentation
-docs/_build/
+    def update(self):
+        self.rect.x -= 5
+        if self.rect.x < -self.rect.width:
+            self.kill()
 
-# PyBuilder
-.pybuilder/
-target/
+# Thiết lập màn hình và các sprite
+pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+clock = pygame.time.Clock()
+sprites = pygame.sprite.Group()
+dinosaur = Dinosaur()
+sprites.add(dinosaur)
 
-# Jupyter Notebook
-.ipynb_checkpoints
+score = 0
+font = pygame.font.Font(None, 36)
 
-# IPython
-profile_default/
-ipython_config.py
+running = True
+game_over = False  # Trạng thái game over
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+# Hình ảnh nút chơi lại
+replay_button_img = pygame.Surface((100, 50))
+replay_button_img.fill((0, 0, 255))  # Màu xanh dương
+replay_button_rect = replay_button_img.get_rect()
+replay_button_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+while running:
+    if game_over:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if replay_button_rect.collidepoint(event.pos):  # Kiểm tra nút chơi lại đã được nhấn
+                    sprites.empty()
+                    dinosaur = Dinosaur()
+                    sprites.add(dinosaur)
+                    score = 0
+                    game_over = False
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
+        screen.fill((255, 255, 255))
+        sprites.draw(screen)
+        screen.blit(replay_button_img, replay_button_rect)
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
-.pdm.toml
+        pygame.display.flip()
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+    else:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    dinosaur.jump()
+                elif event.key == pygame.K_DOWN:
+                    dinosaur.duck()
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_DOWN:
+                    dinosaur.stand_up()
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+        sprites.update()
 
-# SageMath parsed files
-*.sage.py
+        if random.randint(0, 120) < 1:
+            cactus = Cactus()
+            sprites.add(cactus)
+        if random.randint(0, 30) < 1:
+            bird = Bird()
+            sprites.add(bird)
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+        screen.fill((255, 255, 255))
+        sprites.draw(screen)
 
-# Spyder project settings
-.spyderproject
-.spyproject
+        collision_list = pygame.sprite.spritecollide(dinosaur, sprites, False)
+        if len(collision_list) > 1:
+            game_over = True
 
-# Rope project settings
-.ropeproject
+        score += 1
+        score_text = font.render("Score: " + str(score), True, (0, 0, 0))
+        screen.blit(score_text, (10, 10))
 
-# mkdocs documentation
-/site
+        pygame.display.flip()
+        clock.tick(60)
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+pygame.quit()
